@@ -64,16 +64,19 @@ func main() {
 
 	kubeClient, err := newKubeClient()
 	if err != nil {
-		logger.Fatalf("an error occurred while creating the Kubernetes client: %s", err)
+		logger.WithField("error", err).Fatal("an error occurred while creating the Kubernetes client")
 	}
 	logger.Info("kubernetes client ready")
 
 	PVCMetricsClient, err := MetricsClientFactory(*metricsClient, *metricsClientURL)
 	if err != nil {
-		logger.Fatalf("metrics client error: %s", err)
+		logger.WithField("error", err).Fatal("metrics client error")
 	}
 
-	logger.Infof("metrics client (%s) ready at address %s", *metricsClient, *metricsClientURL)
+	logger.WithFields(log.Fields{
+		"client": *metricsClient,
+		"url":    *metricsClientURL,
+	}).Info("metrics client ready")
 
 	pvcAutoscaler := &PVCAutoscaler{
 		kubeClient:      kubeClient,
@@ -92,7 +95,7 @@ func main() {
 
 		err := pvcAutoscaler.reconcile(ctx)
 		if err != nil {
-			pvcAutoscaler.logger.Errorf("failed to reconcile: %v", err)
+			pvcAutoscaler.logger.WithField("error", err).Error("failed to reconcile")
 		}
 
 		cancel()
